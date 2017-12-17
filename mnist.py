@@ -22,7 +22,7 @@ mnist = input_data.read_data_sets(data_dir, one_hot=True)
 # Create the model
 in_units = 784
 # 增加一个隐层
-h1_units = 800
+h1_units = 500
 # 初始化偏置项
 W1 = tf.Variable(tf.truncated_normal([in_units, h1_units], stddev=0.1))
 b1 = tf.Variable(tf.constant(0.1, shape=[h1_units]))
@@ -41,7 +41,7 @@ y = tf.identity(tf.matmul(hidden1_drop, W2) + b2)
 y_ = tf.placeholder(tf.float32, [None, 10])
 
 # 设置正则化方法 L2正则
-regularizer = tf.contrib.layers.l2_regularizer(0.0001)
+regularizer = tf.contrib.layers.l2_regularizer(0.0005)
 regularization = regularizer(W1) + regularizer(W2)
 
 cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
@@ -49,24 +49,23 @@ cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_
 # 总损失等于交叉熵损失和正则化损失的和
 loss = cross_entropy + regularization
 
-train_step = tf.train.GradientDescentOptimizer(0.25).minimize(loss)
+train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
 sess = tf.Session()
 init_op = tf.global_variables_initializer()
 sess.run(init_op)
 
+correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
 # Train
 print("the accuracy on train datasets:")
-for i in range(20000):
-    batch_xs, batch_ys = mnist.train.next_batch(800)
-    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.8})
+for i in range(3000):
+    batch_xs, batch_ys = mnist.train.next_batch(100)
+    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.88})
     if i % 100 == 0:
-        correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
         print(sess.run(accuracy, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 1}))
 
 # Test trained model
-correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 print("the accuracy on test datasets:")
 print(sess.run(accuracy, feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1}))

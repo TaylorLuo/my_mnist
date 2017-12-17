@@ -1,9 +1,9 @@
 import numpy as np
 import math
 
-x = np.matrix([[0.5],[1.0]])
-t = np.matrix([[1.0],[0.0]])
-w1 = np.matrix([[0.1, 0.2],[0.3, 0.4]]).T
+x = np.matrix([[0.5], [1.0]])
+t = np.matrix([[1.0], [0.0]])
+w1 = np.matrix([[0.1, 0.2], [0.3, 0.4]]).T
 w2 = np.matrix([[0.6, 0.7], [0.8, 0.9]]).T
 b1 = np.matrix([[0.5], [0.5]])
 b2 = np.matrix([[1.0], [1.0]])
@@ -11,12 +11,12 @@ b2 = np.matrix([[1.0], [1.0]])
 print('forward>>>>>>>>')
 
 # logit1 = np.dot(w1,x)+b1
-logit1 = w1*x+b1
-h1 =  1/(1+np.exp(-logit1))
-logit2 = np.dot(w2,h1)+b2
-h2 =  1/(1+np.exp(-logit2))
-y=h2
-cost = np.sum(np.power((t-y), 2)/2)
+logit1 = w1 * x + b1
+h1 = 1 / (1 + np.exp(-logit1))
+logit2 = np.dot(w2, h1) + b2
+h2 = 1 / (1 + np.exp(-logit2))
+y = h2
+cost = np.sum(np.power((t - y), 2) / 2)
 
 print('x:', x)
 print('w1:', w1)
@@ -32,11 +32,11 @@ print(cost)
 print('>>>>>>>>>>end forward')
 
 print('<<<<<<<<<<backward')
-delta_2 =  np.multiply(np.multiply(y-t,y),(1-y))
-nabla_w2 = np.dot(delta_2,h1.T)
+delta_2 = np.multiply(np.multiply(y - t, y), (1 - y))
+nabla_w2 = np.dot(delta_2, h1.T)
 nabla_b2 = delta_2
-sp_1=      np.multiply(h1,1-h1)
-delta_1 =  np.multiply(np.dot(w2.T,delta_2),sp_1)
+sp_1 = np.multiply(h1, 1 - h1)
+delta_1 = np.multiply(np.dot(w2.T, delta_2), sp_1)
 nabla_w1 = np.dot(delta_1, x.T)
 nabla_b1 = delta_1
 new_w2 = w2 - nabla_w2
