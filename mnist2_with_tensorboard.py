@@ -12,7 +12,8 @@ from tensorflow.examples.tutorials.mnist import input_data
 max_step = 3000  # 最大迭代次数
 learning_rate = 0.0013  # 学习率
 l2_lambda = 0.00005
-dropout = 0.7  # dropout时随机保留神经元的比例
+dropout = 0.8  # dropout时随机保留神经元的比例
+hidden1_input_dim = 800
 
 data_dir = './data'  # 样本数据存储的路径
 log_dir = './log'  # 输出日志保存的路径
@@ -60,7 +61,9 @@ def variable_summaries(var):
 # input_dim：输入数据的维度大小
 # output_dim：输出数据的维度大小(=隐层神经元个数）
 # layer_name：命名空间
-act = tf.nn.relu  # 激活函数（默认是relu)
+# act = tf.nn.relu  # 激活函数（默认是relu)
+act = 'tf.nn.swish'  # 激活函数（默认是relu)
+# act2 = tf.nn.max
 
 
 def nn_layer(input_tensor, input_dim, output_dim, layer_name, act=tf.nn.relu):
@@ -80,7 +83,12 @@ def nn_layer(input_tensor, input_dim, output_dim, layer_name, act=tf.nn.relu):
             preactivate = tf.matmul(input_tensor, weights) + biases
             tf.summary.histogram('linear', preactivate)
         # 将线性输出经过激活函数，并将输出结果也用直方图记录下来
-        activations = act(preactivate, name='activation')
+
+        if(act == 'tf.nn.swish'):
+            activations = preactivate*tf.nn.sigmoid(1.7*preactivate, name='activation')
+        else:
+            activations = act(preactivate, name='activation')
+
         tf.summary.histogram('activations', activations)
 
         # 返回激励层的最终输出
@@ -88,7 +96,7 @@ def nn_layer(input_tensor, input_dim, output_dim, layer_name, act=tf.nn.relu):
 
 
 # 调用隐层创建函数创建一个隐藏层：输入的维度是特征的维度784，神经元个数是800，也就是输出的维度
-hidden1 = nn_layer(x, 784, 800, 'layer1')
+hidden1 = nn_layer(x, 784, hidden1_input_dim, 'layer1', act = 'tf.nn.swish')
 # 创建一个dropout层，随机关闭掉hidden1的一些神经元，并记录keep_prob
 with tf.name_scope('dropout'):
     keep_prob = tf.placeholder(tf.float32)
@@ -96,7 +104,7 @@ with tf.name_scope('dropout'):
     dropped = tf.nn.dropout(hidden1, keep_prob)
 
 # 创建一个输出层，输入的维度是上一层的输出:800,输出的维度是分类的类别种类：10，激活函数设置为全等映射identity.（暂且先别使用softmax,会放在之后的损失函数中一起计算）
-y = nn_layer(dropped, 800, 10, 'layer2', act=tf.identity)
+y = nn_layer(dropped, hidden1_input_dim, 10, 'layer2', act=tf.identity)
 
 # 创建损失函数 使用tf.nn.softmax_cross_entropy_with_logits来计算softmax并计算交叉熵损失,并且求均值作为最终的损失值
 with tf.name_scope('loss'):
@@ -142,9 +150,9 @@ def feed_dict(train):
 
 for i in range(max_step):
     if i % 100 == 0:  # 记录测试集的summary和accuracy
-        summary, acc = sess.run([merged, accuracy], feed_dict=feed_dict(False))
+        summary, acc, loss = sess.run([merged, accuracy, cross_entropy], feed_dict=feed_dict(False))
         test_writer.add_summary(summary, i)
-        print('Accuracy at step %s:%s' % (i, acc))
+        print('at step %s: Accuracy-->%s  Loss-->%s' % (i, acc, loss))
     else:  # 记录训练集的summary
         if i % 100 == 99:  # 记录执行状态
             run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
