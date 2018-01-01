@@ -62,7 +62,7 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 print("the accuracy on train datasets:")
 for i in range(3000):
     batch_xs, batch_ys = mnist.train.next_batch(100)
-    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.78})
+    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.83})
     if i % 100 == 0:
         print(sess.run(accuracy, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 1}))
 
