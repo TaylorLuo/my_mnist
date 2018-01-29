@@ -22,7 +22,7 @@ mnist = input_data.read_data_sets(data_dir, one_hot=True)
 # Create the model
 in_units = 784
 # 增加一个隐层
-h1_units = 500
+h1_units = 600
 # 初始化偏置项
 W1 = tf.Variable(tf.truncated_normal([in_units, h1_units], stddev=0.1))
 b1 = tf.Variable(tf.constant(0.1, shape=[h1_units]))
