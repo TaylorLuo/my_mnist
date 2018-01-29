@@ -3,9 +3,16 @@
 ### Example user template
 
 # IntelliJ project files
+<<<<<<< HEAD
+=======
+.idea
+>>>>>>> 9ab9fca47779142e19aa89ee9aff998638f3a1b2
 .idea/*
 *.iml
 out
 gen
 log/*
+<<<<<<< HEAD
 .idea/workspace.xml
+=======
+>>>>>>> 9ab9fca47779142e19aa89ee9aff998638f3a1b2
