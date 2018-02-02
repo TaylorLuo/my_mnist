@@ -40,20 +40,20 @@ def forward_and_backprop(inputs, targets, hprev):
         ps[t] = np.exp(ys[t]) / np.sum(np.exp(ys[t]))  # softmax
         loss = -tf.reduce_sum(targets * ps[t])  # 计算交叉熵
 
-    print("@@@@@@@@xs@@@@@@")
-    print(xs)
-
-    print("@@@@@@@@hs@@@@@@")
-    print(hs)
-
-    print("@@@@@@@@ys@@@@@@")
-    print(ys)
-
-    print("@@@@@@@@ps@@@@@@")
-    print(ps)
-
-    print("@@@@@@@@loss@@@@@@")
-    print(loss)
+    # print("@@@@@@@@xs@@@@@@")
+    # print(xs)
+    #
+    # print("@@@@@@@@hs@@@@@@")
+    # print(hs)
+    #
+    # print("@@@@@@@@ys@@@@@@")
+    # print(ys)
+    #
+    # print("@@@@@@@@ps@@@@@@")
+    # print(ps)
+    #
+    # print("@@@@@@@@loss@@@@@@")
+    # print(loss)
 
     # 反向传播过程
     dU, dW, dV = np.zeros_like(U), np.zeros_like(W), np.zeros_like(V)
@@ -61,46 +61,49 @@ def forward_and_backprop(inputs, targets, hprev):
     dhnext = np.zeros_like(hs[0])
 
     for t in reversed(xrange(seq_length)):
+        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        # print("$$$$$$$$$$$$$$$$$第%d次 BP" % t)
+        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         dy = np.copy(ps[t])
-        print("@@@@@@@@ dy @@@@@@")
-        print(dy)
+        # print("@@@@@@@@ dy @@@@@@")
+        # print(dy)
 
         dy[targets[t]] -= 1  # softmax-交叉熵delta： y-t
-        print("@@@@@@@@ dy @@@@@@")
-        print(dy)
+        # print("@@@@@@@@ dy @@@@@@")
+        # print(dy)
 
-        print("@@@@@@@@ s3.T @@@@@@" % np.transpose(hs[t]))
-        print(np.transpose(hs[t]))
+        # print("@@@@@@@@ s3.T @@@@@@" % np.transpose(hs[t]))
+        # print(np.transpose(hs[t]))
 
         dV += np.dot(dy, np.transpose(hs[t]))  # V-nabla
-        print("@@@@@@@@ dV @@@@@@")
+        print("@@@@@@@@ dV-%d @@@@@@" % t)
         print(dV)
 
         dbo += dy  # bo-nabla
-        print("@@@@@@@@ dbo @@@@@@")
-        print(dbo)
+        # print("@@@@@@@@ dbo @@@@@@")
+        # print(dbo)
 
         if t == 2:
-            print("@@@@@@@@ t @@@@@@")
-            print(t)
             dh = np.dot(np.transpose(V), dy)  # backprop into hidden-state
-            print("@@@@@@@@ dh @@@@@@")
-            print(dh)
+            # print("@@@@@@@@ dh @@@@@@")
+            # print(dh)
         else:
-            print("@@@@@@@@ t @@@@@@")
-            print(t)
             dh = np.dot(np.transpose(W), dhnext) + np.dot(np.transpose(V), dy)  # backprop into hidden-state
-            print("@@@@@@@@ dh @@@@@@")
-            print(dh)
+            # print("@@@@@@@@ dh @@@@@@")
+            # print(dh)
 
         dhraw = (1 - hs[t] * hs[t]) * dh  # tanh的导数是1-logits^2
-        print("@@@@@@@@ dhraw @@@@@@")
-        print(dhraw)
+        # print("@@@@@@@@ dhraw @@@@@@")
+        # print(dhraw)
 
         dbs += dhraw  # bs-nabla
         dU += np.dot(dhraw, np.transpose(xs[t]))  # U-nabla
+        print("@@@@@@@@ dU-%d @@@@@@" % t)
+        print(dU)
         if t > 0:
             dW += np.dot(dhraw, np.transpose(hs[t-1]))  # W-nabla
+            print("@@@@@@@@ dW-%d @@@@@@" % t)
+            print(dW)
         dhnext = dhraw
 
     return loss, dU, dW, dV, dbs, dbo, hs[seq_length - 1]
@@ -109,6 +112,9 @@ def forward_and_backprop(inputs, targets, hprev):
 # 执行前向+反向传播5次（每次计算的time step为3）
 
 for n in range(5):
+  print("######################################################")
+  print("#######################第 %d 次 循环###################" % n)
+  print("######################################################")
   # prepare inputs (we're sweeping from left to right in steps seq_length long)
   if p+seq_length+1 >= len(x) or n == 0:
     hprev = np.zeros((hidden_size,1)) # reset RNN memory

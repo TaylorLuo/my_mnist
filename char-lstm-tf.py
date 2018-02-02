@@ -1,6 +1,7 @@
 import tensorflow as tf
 import time
 import numpy as np
+import copy
 
 # data I/O
 # data = open('input.txt', 'r').read().decode('utf-8')
@@ -26,7 +27,7 @@ batch_size = 1
 num_classes = num_classes
 
 raw_x = [char_to_ix[ch] for ch in data]
-raw_y = [char_to_ix[ch] for ch in data[1:]]   # 可以看出raw_x中每一个汉字ix，所对应的groundtruth为该汉字下一个汉字的ix
+raw_y = [char_to_ix[ch] for ch in data[1:]]
 raw_y.append(num_classes-1)
 
 # print(raw_x)
@@ -58,11 +59,10 @@ tf.reset_default_graph()
 
 x = tf.placeholder(tf.int32, [None, None], name='input_placeholder')
 y = tf.placeholder(tf.int32, [None, None], name='labels_placeholder')
-init_state = tf.zeros([batch_size, state_size])
 
 rnn_inputs = tf.one_hot(x, num_classes)
-
-cell = tf.nn.rnn_cell.BasicRNNCell(state_size)
+cell = tf.nn.rnn_cell.BasicLSTMCell(state_size)
+init_state = cell.zero_state(tf.shape(x)[0], dtype=tf.float32)
 rnn_outputs, final_state = tf.nn.dynamic_rnn(cell, rnn_inputs, initial_state=init_state)
 
 with tf.variable_scope('softmax'):
@@ -76,8 +76,13 @@ predictions = tf.nn.softmax(logits)
 
 losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=logits)
 
-total_loss = tf.reduce_mean(losses)
-train_step = tf.train.AdamOptimizer(learning_rate).minimize(total_loss)
+total_loss = tf.reduce_sum(losses)
+optimizer = tf.train.AdamOptimizer(learning_rate)
+gradients, variables = zip(*optimizer.compute_gradients(total_loss))
+gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
+
+
+train_step = optimizer.apply_gradients(zip(gradients, variables))
 
 
 def train_network(sess, num_steps, state_size=4, verbose=True, training_state=None):
@@ -87,7 +92,9 @@ def train_network(sess, num_steps, state_size=4, verbose=True, training_state=No
         training_state = np.zeros((batch_size, state_size))
     start_time = time.time()
     smooth_loss = -np.log(1.0/num_classes)*seq_length
-    for step, (X,Y) in enumerate(gen_batch()):
+    for step, (X, Y) in enumerate(gen_batch()):
+        if step == 0:
+            training_state = sess.run(init_state, feed_dict={x:X})
         tr_losses, training_loss_, training_state, _, predictions_values = \
             sess.run([losses,
                       total_loss,
@@ -111,14 +118,16 @@ def train_network(sess, num_steps, state_size=4, verbose=True, training_state=No
     choice_input = [[char_to_ix[init_char]]]
     result_list = []
     result_list.append(init_char)
-    inference_state_value = training_state.copy()
+    # inference_state_value = training_state.copy()
+    inference_state_value = copy.copy(training_state)
     for _ in range(500):
         p, inference_state_value = sess.run([predictions, final_state],
                                             feed_dict={x: choice_input,
                                                        init_state: inference_state_value})
         c = np.argmax(p.ravel())
-        choice_input = [[c]]      #把返回的p中置信度最大的作为下一次预测的输入，同时将每一个置信度最大的放到result_list中
+        choice_input = [[c]]
         result_list.append(ix_to_char[c])
+    # print(inference_state_value)
     print("--------predict some text----------\n%s\n++++++++++++" % ''.join(result_list))
     return smooth_loss, training_state
 
@@ -132,18 +141,3 @@ for epoch in range(train_epochs):
     training_losses, training_state = train_network(sess, seq_length, state_size=state_size, training_state=training_state)
 
 
-
-# reference 到jupyter中进行
-# init_char = u"观"
-# choice_input = [[char_to_ix[init_char]]]
-# result_list = []
-# result_list.append(init_char)
-# inference_state_value = training_state.copy()
-#
-# p, inference_state_value = sess.run([predictions, final_state],
-#                                             feed_dict={x: choice_input,
-#                                                        init_state: inference_state_value})
-# c = np.argmax(p.ravel())
-# choice_input = [[c]]
-# result_list.append(ix_to_char[c])
-# print("--------predict some text----------\n%s\n++++++++++++" % ''.join(result_list))
